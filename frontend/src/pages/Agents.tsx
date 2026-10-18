@@ -35,7 +35,7 @@ export function Agents() {
           <table className="table">
             <thead><tr><th>When</th><th>Agent</th><th>Purpose</th><th>Status</th><th>Tokens</th><th>Cost</th></tr></thead>
             <tbody>{calls.data.map((c) => <tr key={c.id}><td className="muted">{timeAgo(c.at)}</td><td>{c.provider}</td><td>{c.purpose}</td><td><StatusPill value={c.status} />{c.error_kind && <span className="muted small"> {c.error_kind}</span>}</td>
-              <td>{c.input_tokens ?? "?"}/{c.output_tokens ?? "?"}</td><td>{c.billable ? `$${(c.cost_usd ?? 0).toFixed(4)}` : c.cost_basis === "local" ? "local · free" : "demo"}</td></tr>)}</tbody>
+              <td>{c.input_tokens ?? "?"}/{c.output_tokens ?? "?"}</td><td>{c.billable ? `$${(c.cost_usd ?? 0).toFixed(4)}` : c.cost_basis === "local" ? "local · free" : c.cost_basis === "ollama_cloud" ? "Ollama cloud · not billed here" : "demo"}</td></tr>)}</tbody>
           </table>
         )}
       </Card>

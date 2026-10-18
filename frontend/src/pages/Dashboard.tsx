@@ -126,7 +126,7 @@ export function Dashboard() {
           </div>
           <div>
             <span className="stat-n">{u.local_calls_today ?? 0}</span>
-            <span className="muted small">local-model calls today (free)</span>
+            <span className="muted small">Ollama calls today (not billed here)</span>
           </div>
         </div>
         <table className="table">

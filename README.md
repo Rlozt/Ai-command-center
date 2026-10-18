@@ -7,7 +7,7 @@ A local-first dashboard where three AI agents work as one team on your tasks, wi
 | **OpenAI** | Analysis and planning | Breaks requests into subtasks, evaluates evidence, reviews Claude's work |
 | **Claude (Anthropic)** | Implementation and synthesis | Writes code and documents as *proposed* changes, writes the final deliverable |
 | **Perplexity** | Research and evidence | Live web research with sources, dates and confidence; every source is shown |
-| **Local model** (optional) | Free stand-in for any role | An Ollama model on your own PC: no API charges, no web access, weaker output |
+| **Ollama** (optional) | Free stand-in for any role | An open model run locally on your PC or in Ollama's cloud: not billed by this app, no web access, weaker than the paid services |
 
 Roles are defaults, not restrictions: you can route any step manually, and if a provider is disabled or has no key the task falls back (research falls back to a model **without web access** and says so).
 
@@ -80,7 +80,7 @@ Providers can be toggled individually in Settings. With Perplexity off, research
 
 ---
 
-## 2b. Free option: a local model (Ollama, no API keys, no per-use cost)
+## 2b. Free options: Ollama, on your PC or in Ollama's cloud
 
 Run an open model on your own computer with [Ollama](https://ollama.com). Nothing is sent to any company and there are no API charges (you pay only with your own electricity and waiting time).
 
@@ -92,6 +92,19 @@ Run an open model on your own computer with [Ollama](https://ollama.com). Nothin
    ```
 3. In `.env` set `ACC_MODE=live` and `LOCAL_MODEL=llama3.1:8b` (the exact name you pulled). Leave the three API key lines empty.
 4. Restart the app. On **Settings**, click **Validate** on the *Local model* row: it checks that Ollama is running and the model is installed, without generating anything. Then try a task.
+
+### Ollama cloud (fast on any PC, free plan available)
+
+Ollama can also run models on **its own servers**. They are fast on any computer and need no download. **Your prompts, including project file text the agents read, are sent to Ollama's servers** (Ollama says it does not train on them; see its privacy policy). The free plan has usage limits that I could not verify; check your plan on ollama.com. The app labels these calls *Ollama cloud · not billed here* and never presents them as local or private.
+
+Easiest path (no API key in the app):
+1. In the Ollama app, sign in (or run `ollama signin`) with your own account.
+2. Run `ollama run gemma4:cloud` once (type `/bye` to leave), so the model is registered.
+3. In `.env` set `ACC_MODE=live` and `LOCAL_MODEL=gemma4:cloud`, restart, and click **Validate** on the Ollama row in Settings.
+
+Direct API path (optional): create a key at <https://ollama.com/settings/keys>, then set `LOCAL_BASE_URL=https://ollama.com`, `OLLAMA_API_KEY=...` and `LOCAL_MODEL` to a name from the cloud model list (direct API names look like `gemma4:31b`, not `gemma4:cloud`). The key stays in `.env` and is redacted from logs. You create the key and sign in yourself; the app never does it for you.
+
+Only one Ollama model is configured at a time (`LOCAL_MODEL`).
 
 What to expect, honestly:
 - **Slower and weaker** than the paid services, especially on a PC without a good graphics card. Small models sometimes return malformed structured answers; the app asks once more, then stops the step with a clear error instead of faking a result. A task can take minutes. The *Local model call timeout* (Settings, default 600 s) controls how long each call may run.
@@ -153,6 +166,8 @@ data/               created at runtime: SQLite DB, staging, backups, sandbox, se
 | Settings shows `missing: set OPENAI_API_KEY` | Key not in `.env`/environment, or you did not restart after editing. |
 | Local model: "Could not reach Ollama" | Start Ollama (system tray icon, or run `ollama serve`), then Validate again. |
 | Local model: "model is not installed" | Run `ollama pull <the name in LOCAL_MODEL>`; names must match exactly (see `ollama list`). |
+| Ollama cloud: `rate_limit` / HTTP 429 | You hit the free plan's usage limit. Wait, check usage on ollama.com, or switch to a local model. |
+| Ollama cloud: model not available | Run `ollama signin`, then `ollama run <name>:cloud` once; for direct API calls use the names in Ollama's cloud list. |
 | Local model: timeouts or very slow | Use a smaller model, lower `LOCAL_NUM_CTX`, or raise *Local model call timeout* in Settings. |
 | `[auth]` error from a provider | Wrong/expired key, no credits, or key lacks access to the model. A subscription is not an API key. |
 | `[rate_limit]`, task paused | Retries are bounded; wait and **Resume**. |
@@ -169,7 +184,7 @@ Run on Linux (Python 3.13, Node 22; Python 3.11 and 3.12 are the stated minimum 
 
 - **Verified by automated tests (no paid calls):** state machine; budget/limit enforcement; gateway retries/timeouts; staging/approval/hash binding/apply/revert; path and tool security; engine flows in demo mode; research cache, claim statuses, source-origin flagging, Perplexity routing and fallback via mocked HTTP; memory rules; HTTP API incl. auth/Host/Origin guards; UI pages with a mocked API.
 - **Verified manually:** a headless browser (Playwright/Chromium) created a project, ran a task, viewed the diff, approved, and confirmed the files were applied, with no console errors.
-- **Verified on Windows by the owner:** `py scripts\acc.py setup`, `test` and `start` worked (Python 3.14, Node 24). **NOT verified:** the local-model (Ollama) adapter, which was tested only against a fake HTTP server built from Ollama's documented API (the build sandbox could not download Ollama, so it has **never talked to a real Ollama**; please report the first real error); the OpenAI, Anthropic and Perplexity adapters against the *real* services (they are tested only against fakes built from the documented request/response shapes); the default model ids; the `.ps1` wrappers. Also confirmed on Windows by the owner in demo mode: a research task, and approving a staged proposal wrote the files into the project folder.
+- **Verified on Windows by the owner:** `py scripts\acc.py setup`, `test` and `start` worked (Python 3.14, Node 24). **NOT verified:** the Ollama adapter (local and cloud), which was tested only against fake HTTP servers built from Ollama's documentation (the build sandbox could not reach Ollama, so it has **never talked to a real Ollama or to Ollama cloud**; please report the first real error); the OpenAI, Anthropic and Perplexity adapters against the *real* services (they are tested only against fakes built from the documented request/response shapes); the default model ids; the `.ps1` wrappers. Also confirmed on Windows by the owner in demo mode: a research task, and approving a staged proposal wrote the files into the project folder.
 
 Run `python scripts/acc.py test` yourself to see current numbers; do not rely on this README for pass counts.
 

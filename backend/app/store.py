@@ -168,11 +168,11 @@ class Store:
         return rows
 
     def task_usage(self, task_id: str) -> dict:
-        r = self.db.one("SELECT COUNT(*) calls, COALESCE(SUM(input_tokens),0) i, COALESCE(SUM(output_tokens),0) o, COALESCE(SUM(CASE WHEN billable=1 THEN cost_usd END),0) cost, COALESCE(SUM(billable),0) billable_calls, COALESCE(SUM(cost_basis='local'),0) local_calls FROM calls WHERE task_id=? AND purpose!='ping'", (task_id,))
+        r = self.db.one("SELECT COUNT(*) calls, COALESCE(SUM(input_tokens),0) i, COALESCE(SUM(output_tokens),0) o, COALESCE(SUM(CASE WHEN billable=1 THEN cost_usd END),0) cost, COALESCE(SUM(billable),0) billable_calls, COALESCE(SUM(cost_basis='local'),0) local_calls, COALESCE(SUM(cost_basis='ollama_cloud'),0) cloud_calls FROM calls WHERE task_id=? AND purpose!='ping'", (task_id,))
         by = self.db.all("SELECT provider, COUNT(*) calls, COALESCE(SUM(CASE WHEN billable=1 THEN cost_usd END),0) cost FROM calls WHERE task_id=? AND purpose!='ping' GROUP BY provider", (task_id,))
         return {"calls": r["calls"], "input_tokens": r["i"], "output_tokens": r["o"], "cost_usd": round(r["cost"], 6),
-                "billable_calls": r["billable_calls"], "local_calls": r["local_calls"],
-                "demo": r["calls"] > 0 and r["billable_calls"] == 0 and r["local_calls"] == 0, "by_provider": by}
+                "billable_calls": r["billable_calls"], "local_calls": r["local_calls"], "cloud_calls": r["cloud_calls"],
+                "demo": r["calls"] > 0 and r["billable_calls"] == 0 and r["local_calls"] == 0 and r["cloud_calls"] == 0, "by_provider": by}
 
     # ---- reviews / tests / sources / claims -----------------------------
     def add_review(self, task_id: str, subtask_id: str | None, reviewer: str, author: str, round_: int, verdict: str, issues: list, summary: str) -> None:

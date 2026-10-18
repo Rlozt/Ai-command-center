@@ -99,7 +99,12 @@ class Provider(abc.ABC):
     role: str = ""
     billable: bool = True
     demo: bool = False
-    local: bool = False  # runs on the user's machine: free of API charges but NOT a demo mock
+    local: bool = False  # Ollama (local or cloud): not billed by this app, but NOT a demo mock
+
+    @property
+    def free_basis(self) -> str:
+        """cost_basis recorded for non-billable calls."""
+        return "local" if self.local else "demo"
 
     @property
     @abc.abstractmethod

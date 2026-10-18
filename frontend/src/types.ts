@@ -105,7 +105,7 @@ export interface TaskDetailData {
   claims: Claim[];
   sources: Source[];
   events: { id: number; from_state: string | null; to_state: string; reason: string; at: string }[];
-  usage: { calls: number; input_tokens: number; output_tokens: number; cost_usd: number; billable_calls: number; local_calls: number; demo: boolean };
+  usage: { calls: number; input_tokens: number; output_tokens: number; cost_usd: number; billable_calls: number; local_calls: number; cloud_calls: number; demo: boolean };
   running: boolean;
 }
 

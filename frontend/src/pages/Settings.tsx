@@ -80,7 +80,7 @@ export function Settings() {
           <label className="field"><span>Max research calls per task</span><input type="number" min={0} value={L.max_research_calls_per_task} onChange={(e) => setLimit("max_research_calls_per_task", num(e.target.value))} /></label>
           <label className="field"><span>Max repair attempts</span><input type="number" min={0} value={L.max_repair_attempts} onChange={(e) => setLimit("max_repair_attempts", num(e.target.value))} /></label>
           <label className="field"><span>Call timeout (seconds)</span><input type="number" min={5} value={L.call_timeout_s} onChange={(e) => setLimit("call_timeout_s", num(e.target.value))} /></label>
-          <label className="field"><span>Local model call timeout (seconds)</span><input type="number" min={30} value={L.local_call_timeout_s} onChange={(e) => setLimit("local_call_timeout_s", num(e.target.value))} /></label>
+          <label className="field"><span>Ollama call timeout (seconds)</span><input type="number" min={30} value={L.local_call_timeout_s} onChange={(e) => setLimit("local_call_timeout_s", num(e.target.value))} /></label>
           <label className="field"><span>Retries per failed call</span><input type="number" min={0} max={5} value={L.max_retries_per_call} onChange={(e) => setLimit("max_retries_per_call", num(e.target.value))} /></label>
         </div>
         <p className="small">Spent today: <Money usd={s.usage.spent_today_usd} demo={s.mode === "demo"} /> · when a limit would be exceeded, the task pauses before the call is made and waits for you.</p>

@@ -77,7 +77,7 @@ async def test_connection_refused_and_timeout_messages_are_actionable():
     p2, _ = local(slow)
     with pytest.raises(ProviderError) as e2:
         await p2.complete(AgentRequest(purpose="analysis", prompt="hi"))
-    assert e2.value.kind == "timeout" and "Local model call timeout" in e2.value.message
+    assert e2.value.kind == "timeout" and "Ollama call timeout" in e2.value.message
 
 
 async def test_validate_distinguishes_not_running_model_missing_and_ok():
@@ -194,3 +194,103 @@ def test_local_is_opt_in_unless_local_model_is_configured(tmp_path):
 def test_demo_mode_unaffected_local_mock_is_disabled(ctx):
     assert ctx.settings.get_key("providers_enabled")["local"] is False
     assert "local" not in ctx.registry.available()
+
+
+# ---------------------------------------------------------------- Ollama cloud
+def cloud(handler, model="gemma4:cloud", **cfg):
+    c = Config(mode="live", local_model=model, **cfg)
+    return LocalProvider(c, transport=httpx.MockTransport(handler)), c
+
+
+async def test_cloud_model_through_signed_in_local_app_needs_no_key_but_is_labelled_cloud():
+    seen = {}
+
+    def handler(request: httpx.Request):
+        seen["auth"] = request.headers.get("authorization")
+        return httpx.Response(200, json=OLLAMA_OK)
+
+    p, _ = cloud(handler)
+    assert p.is_configured() and p.is_cloud and p.free_basis == "ollama_cloud" and "CLOUD" in p.config_detail()
+    res = await p.complete(AgentRequest(purpose="analysis", prompt="hi"))
+    assert seen["auth"] is None and res.usage.cost_basis == "ollama_cloud" and res.meta["cloud"] is True
+
+
+async def test_direct_cloud_needs_a_key_sends_it_as_bearer_and_never_to_loopback_by_accident():
+    p, _ = cloud(lambda r: httpx.Response(200, json=OLLAMA_OK), model="gemma4:31b", local_base_url="https://ollama.com")
+    assert p.is_configured() is False and "OLLAMA_API_KEY" in p.config_detail()
+    seen = {}
+
+    def handler(request: httpx.Request):
+        seen["url"], seen["auth"] = str(request.url), request.headers.get("authorization")
+        return httpx.Response(200, json=OLLAMA_OK)
+
+    p2, _ = cloud(handler, model="gemma4:31b", local_base_url="https://ollama.com", local_api_key="ollama-key-1234567890")
+    assert p2.is_configured() and p2.free_basis == "ollama_cloud"
+    await p2.complete(AgentRequest(purpose="analysis", prompt="hi"))
+    assert seen["url"] == "https://ollama.com/api/chat" and seen["auth"] == "Bearer ollama-key-1234567890"
+
+
+async def test_cloud_errors_have_actionable_messages():
+    for status, kind in ((401, "auth"), (429, "rate_limit"), (502, "unavailable")):
+        p, _ = cloud(lambda r, s=status: httpx.Response(s, json={"error": "x"}))
+        with pytest.raises(ProviderError) as e:
+            await p.complete(AgentRequest(purpose="analysis", prompt="hi"))
+        assert e.value.kind == kind
+    p, _ = cloud(lambda r: httpx.Response(401, json={"error": "x"}))
+    with pytest.raises(ProviderError) as e:
+        await p.complete(AgentRequest(purpose="analysis", prompt="hi"))
+    assert "ollama signin" in e.value.message and e.value.retryable is False
+
+
+async def test_cloud_validate_messages():
+    ok, msg = await cloud(lambda r: httpx.Response(200, json={"models": [{"name": "gemma4:cloud", "model": "gemma4:cloud"}]}))[0].validate()
+    assert ok and "CLOUD" in msg and "nothing was charged" in msg
+    ok, msg = await cloud(lambda r: httpx.Response(200, json={"models": []}))[0].validate()
+    assert not ok and "ollama signin" in msg and "ollama run gemma4:cloud" in msg
+    ok, msg = await cloud(lambda r: httpx.Response(401, json={"error": "unauthorized"}), model="gemma4:31b", local_base_url="https://ollama.com",
+                          local_api_key="ollama-key-1234567890")[0].validate()
+    assert not ok and "OLLAMA_API_KEY" in msg
+    ok, msg = await cloud(lambda r: httpx.Response(200, json={"models": [{"name": "gemma4:31b"}]}), model="gemma4:cloud", local_base_url="https://ollama.com",
+                          local_api_key="ollama-key-1234567890")[0].validate()
+    assert not ok and "gemma4:31b" in msg  # direct API names differ from :cloud names
+
+
+class DelegatingCloud(DelegatingLocal):
+    @property
+    def free_basis(self):
+        return "ollama_cloud"
+
+    async def complete(self, req):
+        res = await super().complete(req)
+        res.usage = Usage(res.usage.input_tokens, res.usage.output_tokens, 0.0, "ollama_cloud")
+        return res
+
+
+async def test_cloud_task_is_reported_as_cloud_not_local_not_demo_and_not_free_forever(tmp_path):
+    cfg = Config(mode="live", data_dir=tmp_path / "d", local_model="gemma4:cloud")
+    ctx = live_ctx(tmp_path, DelegatingCloud(cfg))
+    t = await run_task(ctx, "Summarize the idea of unit testing in a short document")
+    assert t["status"] == "completed", t["error"]
+    rep = t["report"]
+    assert rep["usage"]["cloud_calls"] >= 2 and rep["usage"]["local_calls"] == 0 and rep["usage"]["demo"] is False
+    assert "Ollama cloud" in rep["cost_statement"] and "your Ollama plan" in rep["cost_statement"] and "Demo" not in rep["cost_statement"]
+    assert any("sent to Ollama's servers" in c for c in rep["caveats"]) and not any("Demo mode" in c for c in rep["caveats"])
+    rows = ctx.store.calls(task_id=t["id"])
+    assert all(r["cost_basis"] == "ollama_cloud" and not r["billable"] for r in rows)
+    assert ctx.budget.summary()["local_calls_today"] >= 2
+
+
+def test_ollama_api_key_is_registered_as_a_secret_and_redacted():
+    from app.security import redact, register_secrets
+    cfg = Config(local_api_key="ollama-secret-abcdef123456")
+    register_secrets(cfg.secrets())
+    assert "ollama-secret-abcdef123456" not in redact("Authorization: Bearer ollama-secret-abcdef123456 failed")
+
+
+async def test_cloud_failures_are_recorded_as_cloud(tmp_path):
+    p, _ = cloud(lambda r: httpx.Response(429, json={"error": "limit"}))
+    ctx = live_ctx(tmp_path, p)
+    ctx.settings.update({"limits": {"max_retries_per_call": 0}})
+    with pytest.raises(ProviderError):
+        await ctx.gateway.call("local", AgentRequest(purpose="analysis", prompt="x"))
+    assert ctx.store.calls()[0]["cost_basis"] == "ollama_cloud"

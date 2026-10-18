@@ -199,7 +199,7 @@ def create_app(ctx: AppContext | None = None, cfg: Config | None = None) -> Fast
                 "subtasks_done": sum(1 for s in subs if s["status"] == "done"), "subtasks_total": len(subs),
                 "agents": sorted({s["agent"] for s in subs}), "error": t["error"], "cost": c.store.task_usage(t["id"])["cost_usd"],
                 "demo": c.store.task_usage(t["id"])["demo"],
-                "local": (lambda u: u["local_calls"] > 0 and u["billable_calls"] == 0)(c.store.task_usage(t["id"]))}
+                "local": (lambda u: (u["local_calls"] + u["cloud_calls"]) > 0 and u["billable_calls"] == 0)(c.store.task_usage(t["id"]))}
 
     def _pending_approvals(c: AppContext) -> list[dict]:
         rows = c.db.all("SELECT p.*, t.title AS task_title FROM proposals p JOIN tasks t ON t.id=p.task_id WHERE p.status='pending' ORDER BY p.created_at")

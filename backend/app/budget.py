@@ -92,8 +92,8 @@ class BudgetService:
             providers[name] = {"spent_today_usd": round(self.spent_today(name), 6), "calls_today": r["c"],
                                "input_tokens_today": r["i"], "output_tokens_today": r["o"],
                                "limit_usd": lim["per_provider_daily_usd"].get(name)}
-        demo_calls = self.db.one("SELECT COUNT(*) c FROM calls WHERE billable=0 AND cost_basis!='local' AND at>=?", (utc_day_start(),))["c"]
-        local_calls = self.db.one("SELECT COUNT(*) c FROM calls WHERE cost_basis='local' AND at>=?", (utc_day_start(),))["c"]
+        demo_calls = self.db.one("SELECT COUNT(*) c FROM calls WHERE billable=0 AND cost_basis NOT IN ('local','ollama_cloud') AND at>=?", (utc_day_start(),))["c"]
+        local_calls = self.db.one("SELECT COUNT(*) c FROM calls WHERE cost_basis IN ('local','ollama_cloud') AND at>=?", (utc_day_start(),))["c"]
         return {"spent_today_usd": round(self.spent_today(), 6), "spent_total_usd": round(self.spent_total(), 6),
                 "daily_limit_usd": lim["daily_usd"], "per_task_limit_usd": lim["per_task_usd"], "overall_limit_usd": lim["overall_usd"],
                 "providers": providers, "demo_calls_today": demo_calls, "local_calls_today": local_calls,

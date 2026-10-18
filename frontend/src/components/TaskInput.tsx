@@ -76,7 +76,7 @@ export function TaskInput({ projects, onCreated }: { projects: Project[]; onCrea
                 <option value="openai">OpenAI</option>
                 <option value="anthropic">Claude</option>
                 <option value="perplexity">Perplexity</option>
-                <option value="local">Local model (free)</option>
+                <option value="local">Ollama (local or cloud)</option>
               </select>
             </label>
           ))}

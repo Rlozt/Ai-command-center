@@ -159,7 +159,7 @@ describe("Local model", () => {
     mockApi({ "/api/settings": { body: s } });
     render(<Settings />);
     expect(await screen.findByText(/missing: set LOCAL_MODEL/)).toBeInTheDocument();
-    expect(screen.getByText("Local model")).toBeInTheDocument();
+    expect(screen.getByText("Ollama")).toBeInTheDocument();
     expect(screen.getByText("none (free)")).toBeInTheDocument();
     expect(screen.queryByLabelText("Local model daily limit")).toBeNull();
   });
@@ -170,8 +170,8 @@ describe("Local model", () => {
     d.usage = { ...d.usage, local_calls_today: 7 };
     mockApi({ "/api/dashboard": { body: d }, "/api/projects": { body: [] } });
     render(<Dashboard />);
-    expect(await screen.findByText(/Local model · /)).toBeInTheDocument();
-    expect(screen.getByText("local-model calls today (free)")).toBeInTheDocument();
+    expect(await screen.findByText(/Ollama · /)).toBeInTheDocument();
+    expect(screen.getByText("Ollama calls today (not billed here)")).toBeInTheDocument();
     expect(screen.getByText("7")).toBeInTheDocument();
   });
 });

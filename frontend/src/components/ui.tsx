@@ -5,7 +5,7 @@ export const AGENTS: Record<Provider, { name: string; role: string; label: strin
   openai: { name: "OpenAI", role: "Analysis", label: "OpenAI · Analysis" },
   anthropic: { name: "Claude", role: "Implementation", label: "Claude · Implementation" },
   perplexity: { name: "Perplexity", role: "Research", label: "Perplexity · Research" },
-  local: { name: "Local model", role: "Free, runs on this PC", label: "Local model · Free" },
+  local: { name: "Ollama", role: "Local or cloud open model", label: "Ollama · Open model" },
 };
 
 export function agentName(p: string): string {
@@ -26,7 +26,7 @@ export function StatusPill({ value, label }: { value: string; label?: string }) 
 }
 
 export function Money({ usd, demo, local }: { usd: number; demo?: boolean; local?: boolean }) {
-  if (local) return <span className="muted">local model · no API charge</span>;
+  if (local) return <span className="muted">Ollama · no charge from this app</span>;
   if (demo) return <span className="muted">demo · no billable calls</span>;
   return <span title="USD, estimated from provider-reported cost or token counts">${usd.toFixed(usd < 0.1 ? 4 : 2)}</span>;
 }

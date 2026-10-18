@@ -52,7 +52,8 @@ class Config:
     perplexity_preset: str = "low"
     perplexity_model: str = ""  # optional "provider/model" override; empty = use preset
     local_model: str = ""  # Ollama model name, e.g. "llama3.1:8b"; empty = local provider not configured
-    local_base_url: str = "http://127.0.0.1:11434"
+    local_base_url: str = "http://127.0.0.1:11434"  # use https://ollama.com for direct Ollama cloud API calls
+    local_api_key: str = ""  # OLLAMA_API_KEY: only needed for direct cloud calls (not when signed in via the local Ollama app)
     local_num_ctx: int = 16384
     openai_base_url: str = ""
     anthropic_base_url: str = ""
@@ -79,13 +80,14 @@ class Config:
         return self.data_dir / "session-token.txt"
 
     def secrets(self) -> list[str]:
-        return [s for s in (self.openai_api_key, self.anthropic_api_key, self.perplexity_api_key) if s]
+        return [s for s in (self.openai_api_key, self.anthropic_api_key, self.perplexity_api_key, self.local_api_key) if s]
 
     def api_key(self, provider: str) -> str:
         return {
             "openai": self.openai_api_key,
             "anthropic": self.anthropic_api_key,
             "perplexity": self.perplexity_api_key,
+            "local": self.local_api_key,
         }.get(provider, "")
 
 
@@ -117,6 +119,7 @@ def load_config(env_file: Path | None = None) -> Config:
         perplexity_model=_env("PERPLEXITY_MODEL"),
         local_model=_env("LOCAL_MODEL"),
         local_base_url=_env("LOCAL_BASE_URL", "http://127.0.0.1:11434"),
+        local_api_key=_env("OLLAMA_API_KEY"),
         local_num_ctx=int(_env("LOCAL_NUM_CTX", "16384") or "16384"),
         openai_base_url=_env("OPENAI_BASE_URL"),
         anthropic_base_url=_env("ANTHROPIC_BASE_URL"),

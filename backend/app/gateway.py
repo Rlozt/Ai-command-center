@@ -72,7 +72,7 @@ class Gateway:
             except asyncio.CancelledError:
                 self.store.record_call(task_id=task_id, subtask_id=subtask_id, provider=provider_name, model=model, purpose=req.purpose,
                                        status="error", error_kind="cancelled", error="cancelled by user or shutdown",
-                                       billable=provider.billable, cost_basis="local" if provider.local else "none",
+                                       billable=provider.billable, cost_basis=provider.free_basis if provider.local else "none",
                                        latency_ms=int((time.monotonic() - t0) * 1000))
                 raise
             except ProviderError as e:
@@ -96,14 +96,14 @@ class Gateway:
     def _record_failure(self, task_id, subtask_id, name, model, req, err: ProviderError, t0) -> ProviderError:
         self.store.record_call(task_id=task_id, subtask_id=subtask_id, provider=name, model=model, purpose=req.purpose, status="error",
                                error_kind=err.kind, error=err.message, billable=self.registry.get(name).billable, cost_usd=0.0,
-                               cost_basis="local" if self.registry.get(name).local else "none", latency_ms=int((time.monotonic() - t0) * 1000))
+                               cost_basis=self.registry.get(name).free_basis if self.registry.get(name).local else "none", latency_ms=int((time.monotonic() - t0) * 1000))
         return err
 
     def _record_success(self, task_id, subtask_id, provider, model, req, result: AgentResult, t0) -> None:
         u: Usage = result.usage
         cost, basis = u.cost_usd, u.cost_basis
         if not provider.billable:
-            cost, basis = 0.0, ("local" if provider.local else "demo")
+            cost, basis = 0.0, provider.free_basis
         elif cost is None:
             if u.input_tokens is not None and u.output_tokens is not None:
                 cost = self.budget.cost_for_tokens(result.model or model, u.input_tokens, u.output_tokens)
