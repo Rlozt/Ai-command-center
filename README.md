@@ -143,7 +143,7 @@ Run on Linux (Python 3.13, Node 22; Python 3.11 and 3.12 are the stated minimum 
 
 - **Verified by automated tests (no paid calls):** state machine; budget/limit enforcement; gateway retries/timeouts; staging/approval/hash binding/apply/revert; path and tool security; engine flows in demo mode; research cache, claim statuses, source-origin flagging, Perplexity routing and fallback via mocked HTTP; memory rules; HTTP API incl. auth/Host/Origin guards; UI pages with a mocked API.
 - **Verified manually:** a headless browser (Playwright/Chromium) created a project, ran a task, viewed the diff, approved, and confirmed the files were applied, with no console errors.
-- **Verified on Windows by the owner:** `py scripts\acc.py setup`, `test` and `start` worked (Python 3.14, Node 24). **NOT verified:** the OpenAI, Anthropic and Perplexity adapters against the *real* services (they are tested only against fakes built from the documented request/response shapes); the default model ids; the `.ps1` wrappers; approving and applying changes on Windows.
+- **Verified on Windows by the owner:** `py scripts\acc.py setup`, `test` and `start` worked (Python 3.14, Node 24). **NOT verified:** the OpenAI, Anthropic and Perplexity adapters against the *real* services (they are tested only against fakes built from the documented request/response shapes); the default model ids; the `.ps1` wrappers. Also confirmed on Windows by the owner in demo mode: a research task, and approving a staged proposal wrote the files into the project folder.
 
 Run `python scripts/acc.py test` yourself to see current numbers; do not rely on this README for pass counts.
 
