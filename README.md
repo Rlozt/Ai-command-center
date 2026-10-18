@@ -30,9 +30,9 @@ python scripts/acc.py status
 
 Open <http://localhost:8787>. In demo mode a blue banner says so and agents are offline mocks: no network, no cost, and results are clearly labelled `[DEMO]`.
 
-### Windows (PowerShell) — **unverified**
+### Windows (PowerShell)
 
-The PowerShell scripts are thin wrappers around `scripts/acc.py` and were **not run on Windows**. If one fails, run the `python scripts\acc.py ...` equivalent shown above and please report the error.
+Setup, tests and start were run once on Windows 10/11 with Python 3.14 and Node 24 using `py scripts\acc.py ...` (222 backend tests passed, 2 symlink tests skipped without Developer Mode). The `.ps1` wrapper scripts themselves were **not** run on Windows. If one fails, run the `python scripts\acc.py ...` equivalent shown above and please report the error.
 
 ```powershell
 cd C:\path\to\ai-command-center
@@ -143,7 +143,7 @@ Run on Linux (Python 3.13, Node 22; Python 3.11 and 3.12 are the stated minimum 
 
 - **Verified by automated tests (no paid calls):** state machine; budget/limit enforcement; gateway retries/timeouts; staging/approval/hash binding/apply/revert; path and tool security; engine flows in demo mode; research cache, claim statuses, source-origin flagging, Perplexity routing and fallback via mocked HTTP; memory rules; HTTP API incl. auth/Host/Origin guards; UI pages with a mocked API.
 - **Verified manually:** a headless browser (Playwright/Chromium) created a project, ran a task, viewed the diff, approved, and confirmed the files were applied, with no console errors.
-- **NOT verified:** the OpenAI, Anthropic and Perplexity adapters against the *real* services (they are tested only against fakes built from the documented request/response shapes); the default model ids; the Windows scripts; Windows file semantics (locking, reserved names, backups).
+- **Verified on Windows by the owner:** `py scripts\acc.py setup`, `test` and `start` worked (Python 3.14, Node 24). **NOT verified:** the OpenAI, Anthropic and Perplexity adapters against the *real* services (they are tested only against fakes built from the documented request/response shapes); the default model ids; the `.ps1` wrappers; approving and applying changes on Windows.
 
 Run `python scripts/acc.py test` yourself to see current numbers; do not rely on this README for pass counts.
 
