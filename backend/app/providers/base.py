@@ -99,6 +99,7 @@ class Provider(abc.ABC):
     role: str = ""
     billable: bool = True
     demo: bool = False
+    local: bool = False  # runs on the user's machine: free of API charges but NOT a demo mock
 
     @property
     @abc.abstractmethod

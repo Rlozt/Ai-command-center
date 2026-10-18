@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS calls (
   error_kind TEXT NOT NULL DEFAULT '', error TEXT NOT NULL DEFAULT '',
   input_tokens INTEGER, output_tokens INTEGER,
   cost_usd REAL,                               -- NULL = unknown
-  cost_basis TEXT NOT NULL DEFAULT 'none',     -- none | demo | reported | estimated
+  cost_basis TEXT NOT NULL DEFAULT 'none',     -- none | demo | local | reported | estimated
   billable INTEGER NOT NULL DEFAULT 0,
   latency_ms INTEGER, meta TEXT NOT NULL DEFAULT '{}',
   at TEXT NOT NULL

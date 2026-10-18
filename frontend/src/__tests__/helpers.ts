@@ -29,7 +29,7 @@ export const providers = (configured = true) =>
   }));
 
 const usage = {
-  spent_today_usd: 0.25, spent_total_usd: 1, daily_limit_usd: 5, per_task_limit_usd: 1, demo_calls_today: 0,
+  spent_today_usd: 0.25, spent_total_usd: 1, daily_limit_usd: 5, per_task_limit_usd: 1, demo_calls_today: 0, local_calls_today: 0,
   providers: { openai: { spent_today_usd: 0, calls_today: 2, input_tokens_today: 0, output_tokens_today: 0, limit_usd: 3 } }, note: "",
 };
 
@@ -45,10 +45,10 @@ export const proposal = (over: Partial<Proposal> = {}): Proposal => ({
 });
 
 export const settings = (over: Partial<SettingsData> = {}): SettingsData => ({
-  mode: "live", providers_enabled: { openai: true, anthropic: true, perplexity: true }, routing_mode: "auto",
+  mode: "live", providers_enabled: { openai: true, anthropic: true, perplexity: true, local: false }, routing_mode: "auto",
   limits: {
     per_task_usd: 1, daily_usd: 5, overall_usd: 0, per_provider_daily_usd: { openai: 3, anthropic: 3, perplexity: 1 }, max_calls_per_task: 25,
-    max_research_calls_per_task: 4, max_repair_attempts: 2, max_subtasks: 8, call_timeout_s: 120, task_timeout_s: 900, max_retries_per_call: 2,
+    max_research_calls_per_task: 4, max_repair_attempts: 2, max_subtasks: 8, call_timeout_s: 120, local_call_timeout_s: 600, task_timeout_s: 900, max_retries_per_call: 2,
     max_output_tokens: 4096, research_max_results: 8, research_cache_ttl_hours: 72, time_sensitive_ttl_hours: 6,
   },
   prices: { "gpt-6.1-sol": { in: 2, out: 10 } }, providers_status: providers(false) as SettingsData["providers_status"],

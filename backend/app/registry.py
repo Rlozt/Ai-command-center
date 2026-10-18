@@ -4,6 +4,7 @@ from __future__ import annotations
 from .config import Config
 from .providers.anthropic_provider import AnthropicProvider
 from .providers.base import Provider, ProviderStatus
+from .providers.local_provider import LocalProvider
 from .providers.mock import MockProvider
 from .providers.openai_provider import OpenAIProvider
 from .providers.perplexity_provider import PerplexityProvider
@@ -22,12 +23,14 @@ class ProviderRegistry:
                 "openai": MockProvider("openai", "Analysis", "demo-openai"),
                 "anthropic": MockProvider("anthropic", "Implementation", "demo-claude"),
                 "perplexity": MockProvider("perplexity", "Research", "demo-perplexity"),
+                "local": MockProvider("local", "Local model", "demo-local"),
             }
         else:
             self.providers = {
                 "openai": OpenAIProvider(cfg),
                 "anthropic": AnthropicProvider(cfg),
                 "perplexity": PerplexityProvider(cfg),
+                "local": LocalProvider(cfg),
             }
 
     def get(self, name: str) -> Provider:
@@ -42,6 +45,8 @@ class ProviderRegistry:
     def status(self) -> list[ProviderStatus]:
         out = []
         for n in PROVIDERS:
+            if n not in self.providers:  # tests may inject a partial set
+                continue
             p = self.providers[n]
             enabled = self.enabled(n)
             configured = p.is_configured()

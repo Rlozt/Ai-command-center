@@ -198,7 +198,8 @@ def create_app(ctx: AppContext | None = None, cfg: Config | None = None) -> Fast
                 "pause_reason": t["pause_reason"], "created_at": t["created_at"], "updated_at": t["updated_at"],
                 "subtasks_done": sum(1 for s in subs if s["status"] == "done"), "subtasks_total": len(subs),
                 "agents": sorted({s["agent"] for s in subs}), "error": t["error"], "cost": c.store.task_usage(t["id"])["cost_usd"],
-                "demo": c.store.task_usage(t["id"])["demo"]}
+                "demo": c.store.task_usage(t["id"])["demo"],
+                "local": (lambda u: u["local_calls"] > 0 and u["billable_calls"] == 0)(c.store.task_usage(t["id"]))}
 
     def _pending_approvals(c: AppContext) -> list[dict]:
         rows = c.db.all("SELECT p.*, t.title AS task_title FROM proposals p JOIN tasks t ON t.id=p.task_id WHERE p.status='pending' ORDER BY p.created_at")
@@ -406,8 +407,8 @@ def create_app(ctx: AppContext | None = None, cfg: Config | None = None) -> Fast
         s = c.settings.get()
         s["providers_status"] = [x.__dict__ for x in c.registry.status()]
         s["mode"] = c.cfg.mode
-        s["models"] = {"openai": c.cfg.openai_model, "anthropic": c.cfg.anthropic_model, "perplexity": c.registry.get("perplexity").model}
-        s["credentials"] = {n: ("configured" if c.registry.get(n).is_configured() else "missing") for n in PROVIDERS}
+        s["models"] = {n: c.registry.get(n).model for n in PROVIDERS if n in c.registry.providers}
+        s["credentials"] = {n: ("configured" if c.registry.get(n).is_configured() else "missing") for n in PROVIDERS if n in c.registry.providers}
         s["usage"] = c.budget.summary()
         return s
 

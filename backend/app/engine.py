@@ -252,7 +252,7 @@ class Engine:
         if t["routing_mode"] == "manual" and t["manual_routes"].get("plan"):
             planner = t["manual_routes"]["plan"]
         else:
-            planner = next((p for p in ("openai", "anthropic") if p in avail), None)
+            planner = next((p for p in ("openai", "anthropic", "local") if p in avail), None)
         used_fallback = ""
         if planner and planner in avail:
             retrieved = self.memory.retrieve(t["project_id"], t["request"])

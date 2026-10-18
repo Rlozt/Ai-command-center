@@ -4,8 +4,8 @@ import { Card, DemoBanner, ErrorBanner, Loading, Money, StatusPill, AGENTS } fro
 import { usePoll } from "../hooks";
 import type { Provider, SettingsData } from "../types";
 
-const PROVIDERS: Provider[] = ["openai", "anthropic", "perplexity"];
-const ENV_VAR: Record<Provider, string> = { openai: "OPENAI_API_KEY", anthropic: "ANTHROPIC_API_KEY", perplexity: "PERPLEXITY_API_KEY" };
+const PROVIDERS: Provider[] = ["openai", "anthropic", "perplexity", "local"];
+const ENV_VAR: Record<Provider, string> = { openai: "OPENAI_API_KEY", anthropic: "ANTHROPIC_API_KEY", perplexity: "PERPLEXITY_API_KEY", local: "LOCAL_MODEL" };
 
 export function Settings() {
   const q = usePoll<SettingsData>(() => api("/api/settings"), 0);
@@ -37,7 +37,7 @@ export function Settings() {
     q.reload();
   }
   async function test(p: Provider) {
-    if (s.mode === "live" && !window.confirm(`Send one tiny real request to ${AGENTS[p].name}? This may cost a fraction of a cent and counts toward your limits.`)) return;
+    if (s.mode === "live" && p !== "local" && !window.confirm(`Send one tiny real request to ${AGENTS[p].name}? This may cost a fraction of a cent and counts toward your limits.`)) return;
     const r = await post<{ ok: boolean; message: string }>(`/api/providers/${p}/test`, { deep: true });
     setResults((x) => ({ ...x, [p]: `${r.ok ? "Test OK" : "Test failed"}: ${r.message}` }));
     q.reload();
@@ -61,7 +61,7 @@ export function Settings() {
                 <td><label className="switch"><input type="checkbox" aria-label={`Enable ${AGENTS[p].name}`} checked={draft.providers_enabled[p]} onChange={(e) => setDraft({ ...draft, providers_enabled: { ...draft.providers_enabled, [p]: e.target.checked } })} /> {draft.providers_enabled[p] ? "on" : "off"}</label></td>
                 <td>{s.mode === "demo" ? <StatusPill value="ok" label="demo (not needed)" /> : <StatusPill value={s.credentials[p] === "configured" ? "ok" : "not_configured"} label={s.credentials[p] === "configured" ? "configured" : `missing: set ${ENV_VAR[p]}`} />}</td>
                 <td className="small">{s.mode === "demo" ? "demo mock" : s.models[p]}</td>
-                <td><input className="narrow" type="number" min={0} step="0.5" aria-label={`${AGENTS[p].name} daily limit`} value={L.per_provider_daily_usd[p] ?? 0} onChange={(e) => setDraft({ ...draft, limits: { ...L, per_provider_daily_usd: { ...L.per_provider_daily_usd, [p]: num(e.target.value) } } })} /></td>
+                <td>{p === "local" ? <span className="muted small">none (free)</span> : <input className="narrow" type="number" min={0} step="0.5" aria-label={`${AGENTS[p].name} daily limit`} value={L.per_provider_daily_usd[p] ?? 0} onChange={(e) => setDraft({ ...draft, limits: { ...L, per_provider_daily_usd: { ...L.per_provider_daily_usd, [p]: num(e.target.value) } } })} />}</td>
                 <td className="actions-col"><button className="btn btn-ghost" onClick={() => validate(p)}>Validate</button><button className="btn btn-ghost" onClick={() => test(p)}>Send test request</button></td>
               </tr>
             ))}
@@ -80,6 +80,7 @@ export function Settings() {
           <label className="field"><span>Max research calls per task</span><input type="number" min={0} value={L.max_research_calls_per_task} onChange={(e) => setLimit("max_research_calls_per_task", num(e.target.value))} /></label>
           <label className="field"><span>Max repair attempts</span><input type="number" min={0} value={L.max_repair_attempts} onChange={(e) => setLimit("max_repair_attempts", num(e.target.value))} /></label>
           <label className="field"><span>Call timeout (seconds)</span><input type="number" min={5} value={L.call_timeout_s} onChange={(e) => setLimit("call_timeout_s", num(e.target.value))} /></label>
+          <label className="field"><span>Local model call timeout (seconds)</span><input type="number" min={30} value={L.local_call_timeout_s} onChange={(e) => setLimit("local_call_timeout_s", num(e.target.value))} /></label>
           <label className="field"><span>Retries per failed call</span><input type="number" min={0} max={5} value={L.max_retries_per_call} onChange={(e) => setLimit("max_retries_per_call", num(e.target.value))} /></label>
         </div>
         <p className="small">Spent today: <Money usd={s.usage.spent_today_usd} demo={s.mode === "demo"} /> · when a limit would be exceeded, the task pauses before the call is made and waits for you.</p>

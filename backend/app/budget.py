@@ -86,15 +86,16 @@ class BudgetService:
     def summary(self) -> dict:
         lim = self.settings.get_key("limits")
         providers = {}
-        for name in ("openai", "anthropic", "perplexity"):
+        for name in ("openai", "anthropic", "perplexity", "local"):
             r = self.db.one("SELECT COUNT(*) c, COALESCE(SUM(input_tokens),0) i, COALESCE(SUM(output_tokens),0) o FROM calls WHERE provider=? AND at>=?",
                             (name, utc_day_start()))
             providers[name] = {"spent_today_usd": round(self.spent_today(name), 6), "calls_today": r["c"],
                                "input_tokens_today": r["i"], "output_tokens_today": r["o"],
                                "limit_usd": lim["per_provider_daily_usd"].get(name)}
-        demo_calls = self.db.one("SELECT COUNT(*) c FROM calls WHERE billable=0 AND at>=?", (utc_day_start(),))["c"]
+        demo_calls = self.db.one("SELECT COUNT(*) c FROM calls WHERE billable=0 AND cost_basis!='local' AND at>=?", (utc_day_start(),))["c"]
+        local_calls = self.db.one("SELECT COUNT(*) c FROM calls WHERE cost_basis='local' AND at>=?", (utc_day_start(),))["c"]
         return {"spent_today_usd": round(self.spent_today(), 6), "spent_total_usd": round(self.spent_total(), 6),
                 "daily_limit_usd": lim["daily_usd"], "per_task_limit_usd": lim["per_task_usd"], "overall_limit_usd": lim["overall_usd"],
-                "providers": providers, "demo_calls_today": demo_calls,
+                "providers": providers, "demo_calls_today": demo_calls, "local_calls_today": local_calls,
                 "note": "Costs are USD. 'reported' = returned by the provider; 'estimated' = tokens x editable price table. "
                         "Failed or timed-out requests may still be billed by the provider and are not counted here."}

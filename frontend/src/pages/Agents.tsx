@@ -25,7 +25,7 @@ export function Agents() {
               <h3>Recent results</h3>
               {a.recent_results.length ? <ul className="plain small">{a.recent_results.map((c) => <li key={c.id}>{c.purpose} · {timeAgo(c.at)}</li>)}</ul> : <p className="muted small">None yet.</p>}
               {a.last_error && <div className="banner banner-bad small" role="alert">Last error ({a.last_error.error_kind}): {a.last_error.error}</div>}
-              <p className="small">Today: {a.usage.calls_today} calls · {a.usage.input_tokens_today}/{a.usage.output_tokens_today} tokens · <Money usd={a.usage.spent_today_usd} demo={a.demo} /></p>
+              <p className="small">Today: {a.usage.calls_today} calls · {a.usage.input_tokens_today}/{a.usage.output_tokens_today} tokens · <Money usd={a.usage.spent_today_usd} demo={a.demo} local={a.provider === "local" && !a.demo} /></p>
             </Card>
           );
         })}
@@ -35,7 +35,7 @@ export function Agents() {
           <table className="table">
             <thead><tr><th>When</th><th>Agent</th><th>Purpose</th><th>Status</th><th>Tokens</th><th>Cost</th></tr></thead>
             <tbody>{calls.data.map((c) => <tr key={c.id}><td className="muted">{timeAgo(c.at)}</td><td>{c.provider}</td><td>{c.purpose}</td><td><StatusPill value={c.status} />{c.error_kind && <span className="muted small"> {c.error_kind}</span>}</td>
-              <td>{c.input_tokens ?? "?"}/{c.output_tokens ?? "?"}</td><td>{c.billable ? `$${(c.cost_usd ?? 0).toFixed(4)}` : "demo"}</td></tr>)}</tbody>
+              <td>{c.input_tokens ?? "?"}/{c.output_tokens ?? "?"}</td><td>{c.billable ? `$${(c.cost_usd ?? 0).toFixed(4)}` : c.cost_basis === "local" ? "local · free" : "demo"}</td></tr>)}</tbody>
           </table>
         )}
       </Card>

@@ -5,6 +5,7 @@ export const AGENTS: Record<Provider, { name: string; role: string; label: strin
   openai: { name: "OpenAI", role: "Analysis", label: "OpenAI · Analysis" },
   anthropic: { name: "Claude", role: "Implementation", label: "Claude · Implementation" },
   perplexity: { name: "Perplexity", role: "Research", label: "Perplexity · Research" },
+  local: { name: "Local model", role: "Free, runs on this PC", label: "Local model · Free" },
 };
 
 export function agentName(p: string): string {
@@ -24,7 +25,8 @@ export function StatusPill({ value, label }: { value: string; label?: string }) 
   return <span className={`pill pill-${tone}`}>{label ?? value.replace(/_/g, " ")}</span>;
 }
 
-export function Money({ usd, demo }: { usd: number; demo?: boolean }) {
+export function Money({ usd, demo, local }: { usd: number; demo?: boolean; local?: boolean }) {
+  if (local) return <span className="muted">local model · no API charge</span>;
   if (demo) return <span className="muted">demo · no billable calls</span>;
   return <span title="USD, estimated from provider-reported cost or token counts">${usd.toFixed(usd < 0.1 ? 4 : 2)}</span>;
 }

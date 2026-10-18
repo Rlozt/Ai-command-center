@@ -1,4 +1,4 @@
-export type Provider = "openai" | "anthropic" | "perplexity";
+export type Provider = "openai" | "anthropic" | "perplexity" | "local";
 
 export interface ProviderStatus {
   provider: Provider;
@@ -27,6 +27,7 @@ export interface TaskBrief {
   error: string;
   cost: number;
   demo: boolean;
+  local: boolean;
 }
 
 export interface ProposalFile {
@@ -61,6 +62,7 @@ export interface UsageSummary {
   daily_limit_usd: number;
   per_task_limit_usd: number;
   demo_calls_today: number;
+  local_calls_today: number;
   providers: Record<string, { spent_today_usd: number; calls_today: number; input_tokens_today: number; output_tokens_today: number; limit_usd: number | null }>;
   note: string;
 }
@@ -103,7 +105,7 @@ export interface TaskDetailData {
   claims: Claim[];
   sources: Source[];
   events: { id: number; from_state: string | null; to_state: string; reason: string; at: string }[];
-  usage: { calls: number; input_tokens: number; output_tokens: number; cost_usd: number; billable_calls: number; demo: boolean };
+  usage: { calls: number; input_tokens: number; output_tokens: number; cost_usd: number; billable_calls: number; local_calls: number; demo: boolean };
   running: boolean;
 }
 
@@ -126,7 +128,7 @@ export interface SettingsData {
   limits: {
     per_task_usd: number; daily_usd: number; overall_usd: number; per_provider_daily_usd: Record<string, number>;
     max_calls_per_task: number; max_research_calls_per_task: number; max_repair_attempts: number; max_subtasks: number;
-    call_timeout_s: number; task_timeout_s: number; max_retries_per_call: number; max_output_tokens: number;
+    call_timeout_s: number; local_call_timeout_s: number; task_timeout_s: number; max_retries_per_call: number; max_output_tokens: number;
     research_max_results: number; research_cache_ttl_hours: number; time_sensitive_ttl_hours: number;
   };
   prices: Record<string, { in: number; out: number }>;

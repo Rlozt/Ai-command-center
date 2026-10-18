@@ -124,6 +124,10 @@ export function Dashboard() {
             <span className="stat-n">{u.demo_calls_today}</span>
             <span className="muted small">demo calls today (not billable)</span>
           </div>
+          <div>
+            <span className="stat-n">{u.local_calls_today ?? 0}</span>
+            <span className="muted small">local-model calls today (free)</span>
+          </div>
         </div>
         <table className="table">
           <thead>

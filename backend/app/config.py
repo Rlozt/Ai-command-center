@@ -51,6 +51,9 @@ class Config:
     anthropic_effort: str = "medium"
     perplexity_preset: str = "low"
     perplexity_model: str = ""  # optional "provider/model" override; empty = use preset
+    local_model: str = ""  # Ollama model name, e.g. "llama3.1:8b"; empty = local provider not configured
+    local_base_url: str = "http://127.0.0.1:11434"
+    local_num_ctx: int = 16384
     openai_base_url: str = ""
     anthropic_base_url: str = ""
     perplexity_base_url: str = "https://api.perplexity.ai"
@@ -112,6 +115,9 @@ def load_config(env_file: Path | None = None) -> Config:
         anthropic_effort=_env("ANTHROPIC_EFFORT", "medium"),
         perplexity_preset=_env("PERPLEXITY_PRESET", "low"),
         perplexity_model=_env("PERPLEXITY_MODEL"),
+        local_model=_env("LOCAL_MODEL"),
+        local_base_url=_env("LOCAL_BASE_URL", "http://127.0.0.1:11434"),
+        local_num_ctx=int(_env("LOCAL_NUM_CTX", "16384") or "16384"),
         openai_base_url=_env("OPENAI_BASE_URL"),
         anthropic_base_url=_env("ANTHROPIC_BASE_URL"),
         perplexity_base_url=_env("PERPLEXITY_BASE_URL", "https://api.perplexity.ai"),

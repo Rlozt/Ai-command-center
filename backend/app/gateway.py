@@ -50,7 +50,10 @@ class Gateway:
             raise ProviderError("config", f"{provider_name} is disabled in settings", provider=provider_name)
         if not provider.is_configured():
             raise ProviderError("config", provider.config_detail() or f"{provider_name} is not configured", provider=provider_name)
-        req.timeout_s = min(req.timeout_s, float(lim["call_timeout_s"])) if req.timeout_s else float(lim["call_timeout_s"])
+        cap = float(lim["local_call_timeout_s"] if provider.local else lim["call_timeout_s"])
+        req.timeout_s = min(req.timeout_s, cap) if req.timeout_s else cap
+        if provider.local:  # the default request timeout (120s) must not undercut the local cap
+            req.timeout_s = cap
         req.max_output_tokens = min(req.max_output_tokens, int(lim["max_output_tokens"]))
         max_attempts = int(lim["max_retries_per_call"]) + 1
         model = req.model or provider.model
@@ -69,7 +72,8 @@ class Gateway:
             except asyncio.CancelledError:
                 self.store.record_call(task_id=task_id, subtask_id=subtask_id, provider=provider_name, model=model, purpose=req.purpose,
                                        status="error", error_kind="cancelled", error="cancelled by user or shutdown",
-                                       billable=provider.billable, cost_basis="none", latency_ms=int((time.monotonic() - t0) * 1000))
+                                       billable=provider.billable, cost_basis="local" if provider.local else "none",
+                                       latency_ms=int((time.monotonic() - t0) * 1000))
                 raise
             except ProviderError as e:
                 e.provider = e.provider or provider_name
@@ -92,14 +96,14 @@ class Gateway:
     def _record_failure(self, task_id, subtask_id, name, model, req, err: ProviderError, t0) -> ProviderError:
         self.store.record_call(task_id=task_id, subtask_id=subtask_id, provider=name, model=model, purpose=req.purpose, status="error",
                                error_kind=err.kind, error=err.message, billable=self.registry.get(name).billable, cost_usd=0.0,
-                               cost_basis="none", latency_ms=int((time.monotonic() - t0) * 1000))
+                               cost_basis="local" if self.registry.get(name).local else "none", latency_ms=int((time.monotonic() - t0) * 1000))
         return err
 
     def _record_success(self, task_id, subtask_id, provider, model, req, result: AgentResult, t0) -> None:
         u: Usage = result.usage
         cost, basis = u.cost_usd, u.cost_basis
         if not provider.billable:
-            cost, basis = 0.0, "demo"
+            cost, basis = 0.0, ("local" if provider.local else "demo")
         elif cost is None:
             if u.input_tokens is not None and u.output_tokens is not None:
                 cost = self.budget.cost_for_tokens(result.model or model, u.input_tokens, u.output_tokens)

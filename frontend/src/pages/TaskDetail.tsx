@@ -221,14 +221,14 @@ export function TaskDetail({ id }: { id: string }) {
 
       {tab === "Logs and usage" && (
         <>
-          <Card title="Usage"><p>{d.usage.calls} calls · {d.usage.input_tokens} tokens in / {d.usage.output_tokens} out · <Money usd={d.usage.cost_usd} demo={d.usage.demo} /></p></Card>
+          <Card title="Usage"><p>{d.usage.calls} calls · {d.usage.input_tokens} tokens in / {d.usage.output_tokens} out · <Money usd={d.usage.cost_usd} demo={d.usage.demo} local={d.usage.local_calls > 0 && d.usage.billable_calls === 0} /></p></Card>
           <Card title="Model calls">
             {d.calls.length === 0 ? <Empty title="No model calls yet" /> : (
               <table className="table">
                 <thead><tr><th>Agent</th><th>Purpose</th><th>Status</th><th>Tokens</th><th>Cost</th></tr></thead>
                 <tbody>{d.calls.map((c) => <tr key={c.id}><td>{agentName(c.provider)}<div className="muted small">{c.model}</div></td><td>{c.purpose}</td>
                   <td><StatusPill value={c.status} />{c.error && <div className="small bad-text">{c.error}</div>}</td><td>{c.input_tokens ?? "?"} / {c.output_tokens ?? "?"}</td>
-                  <td>{c.billable ? `$${(c.cost_usd ?? 0).toFixed(4)} (${c.cost_basis})` : "demo"}</td></tr>)}</tbody>
+                  <td>{c.billable ? `$${(c.cost_usd ?? 0).toFixed(4)} (${c.cost_basis})` : c.cost_basis === "local" ? "local · free" : "demo"}</td></tr>)}</tbody>
               </table>
             )}
           </Card>

@@ -50,6 +50,8 @@ def build_context(cfg: Config, *, providers: dict[str, Provider] | None = None, 
     db = Database(db_path or cfg.db_path)
     store = Store(db)
     settings = SettingsService(db)
+    if cfg.mode == "live" and cfg.local_model and db.get_setting("providers_enabled", None) is None:
+        settings.update({"providers_enabled": {"local": True}})  # LOCAL_MODEL set and nothing saved yet: the user clearly wants it
     registry = ProviderRegistry(cfg, settings, providers)
     budget = BudgetService(db, settings)
     gateway = Gateway(registry, budget, store, settings, sleep=sleep)

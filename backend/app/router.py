@@ -6,13 +6,13 @@ from dataclasses import dataclass
 # preference order per subtask kind; later entries are fallbacks when earlier ones are unavailable
 PREFERENCES: dict[str, list[str]] = {
     "research": ["perplexity"],  # web research only runs on Perplexity; see fallback handling below
-    "analysis": ["openai", "anthropic"],
-    "implementation": ["anthropic", "openai"],
-    "document": ["anthropic", "openai"],
-    "synthesis": ["anthropic", "openai"],
+    "analysis": ["openai", "anthropic", "local"],
+    "implementation": ["anthropic", "openai", "local"],
+    "document": ["anthropic", "openai", "local"],
+    "synthesis": ["anthropic", "openai", "local"],
 }
 # If Perplexity is unavailable, another model can still answer from its own knowledge but has NO web access.
-RESEARCH_FALLBACKS = ["openai", "anthropic"]
+RESEARCH_FALLBACKS = ["openai", "anthropic", "local"]
 
 
 class RoutingError(Exception):
@@ -58,7 +58,8 @@ def route_review(author: str, available: set[str], mode: str = "auto", manual: d
         note = "manual route" + ("" if choice != author else " (same agent as author: NOT independent)")
         return Route(choice, note)
     # Perplexity is a search agent, so it is never used as a code/document reviewer.
-    order = {"openai": ["anthropic"], "anthropic": ["openai"], "perplexity": ["openai", "anthropic"]}.get(author, ["openai"])
+    order = {"openai": ["anthropic", "local"], "anthropic": ["openai", "local"], "perplexity": ["openai", "anthropic", "local"],
+             "local": ["openai", "anthropic"]}.get(author, ["openai"])
     for p in order:
         if p in available:
             return Route(p, "independent reviewer")

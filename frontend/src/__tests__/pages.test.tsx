@@ -36,7 +36,7 @@ describe("Dashboard", () => {
   });
 
   it("lists active tasks with their status", async () => {
-    const task = { id: "t_1", title: "Compare options", status: "running", outcome: "", paused: false, pause_reason: "", created_at: "2026-10-18T00:00:00Z", updated_at: "2026-10-18T00:00:00Z", subtasks_done: 1, subtasks_total: 3, agents: ["perplexity"], error: "", cost: 0, demo: false };
+    const task = { id: "t_1", title: "Compare options", status: "running", outcome: "", paused: false, pause_reason: "", created_at: "2026-10-18T00:00:00Z", updated_at: "2026-10-18T00:00:00Z", subtasks_done: 1, subtasks_total: 3, agents: ["perplexity"], error: "", cost: 0, demo: false, local: false };
     mockApi({ "/api/dashboard": { body: dashboard({ current_tasks: [task] }) }, "/api/projects": { body: [] } });
     render(<Dashboard />);
     expect(await screen.findByText("Compare options")).toBeInTheDocument();
@@ -145,5 +145,33 @@ describe("Settings", () => {
     expect(await screen.findByText(/must be non-negative/)).toBeInTheDocument();
     const put = calls.find((c) => c.init?.method === "PUT")!;
     expect(JSON.parse(put.init!.body as string).providers_enabled.perplexity).toBe(false);
+  });
+});
+
+describe("Local model", () => {
+  it("settings names LOCAL_MODEL, shows the local option as free, and has no daily dollar limit for it", async () => {
+    const base = settings();
+    const s = settings({
+      providers_enabled: { ...base.providers_enabled, local: false },
+      providers_status: [...base.providers_status, { provider: "local", role: "Local model", enabled: false, configured: false, ready: false, demo: false, model: "", detail: "", validated: null }],
+      credentials: { ...base.credentials, local: "missing" }, models: { ...base.models, local: "" },
+    });
+    mockApi({ "/api/settings": { body: s } });
+    render(<Settings />);
+    expect(await screen.findByText(/missing: set LOCAL_MODEL/)).toBeInTheDocument();
+    expect(screen.getByText("Local model")).toBeInTheDocument();
+    expect(screen.getByText("none (free)")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Local model daily limit")).toBeNull();
+  });
+
+  it("dashboard shows the local card without crashing and counts local calls separately from demo calls", async () => {
+    const d = dashboard();
+    d.providers = [...d.providers, { provider: "local", role: "Local model", enabled: true, configured: true, ready: true, demo: false, model: "llama3.1:8b", detail: "", validated: null }];
+    d.usage = { ...d.usage, local_calls_today: 7 };
+    mockApi({ "/api/dashboard": { body: d }, "/api/projects": { body: [] } });
+    render(<Dashboard />);
+    expect(await screen.findByText(/Local model · /)).toBeInTheDocument();
+    expect(screen.getByText("local-model calls today (free)")).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
   });
 });

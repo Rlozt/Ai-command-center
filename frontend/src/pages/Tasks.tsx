@@ -32,7 +32,7 @@ export function Tasks() {
                 <td>{t.paused ? <StatusPill value="paused" /> : <StatusPill value={t.status} />}{t.outcome === "partial" && <> <StatusPill value="unverified" label="partial" /></>}</td>
                 <td>{t.subtasks_done}/{t.subtasks_total}</td>
                 <td>{t.agents.map(agentName).join(", ")}</td>
-                <td><Money usd={t.cost} demo={t.demo} /></td>
+                <td><Money usd={t.cost} demo={t.demo} local={t.local} /></td>
                 <td className="muted">{timeAgo(t.updated_at)}</td>
               </tr>
             ))}

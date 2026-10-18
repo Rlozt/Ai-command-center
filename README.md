@@ -7,6 +7,7 @@ A local-first dashboard where three AI agents work as one team on your tasks, wi
 | **OpenAI** | Analysis and planning | Breaks requests into subtasks, evaluates evidence, reviews Claude's work |
 | **Claude (Anthropic)** | Implementation and synthesis | Writes code and documents as *proposed* changes, writes the final deliverable |
 | **Perplexity** | Research and evidence | Live web research with sources, dates and confidence; every source is shown |
+| **Local model** (optional) | Free stand-in for any role | An Ollama model on your own PC: no API charges, no web access, weaker output |
 
 Roles are defaults, not restrictions: you can route any step manually, and if a provider is disabled or has no key the task falls back (research falls back to a model **without web access** and says so).
 
@@ -79,6 +80,28 @@ Providers can be toggled individually in Settings. With Perplexity off, research
 
 ---
 
+## 2b. Free option: a local model (Ollama, no API keys, no per-use cost)
+
+Run an open model on your own computer with [Ollama](https://ollama.com). Nothing is sent to any company and there are no API charges (you pay only with your own electricity and waiting time).
+
+1. Install Ollama from <https://ollama.com/download> (Windows installer) and start it (it runs in the system tray).
+2. Download a model once (several GB). Check <https://ollama.com/library> for current names; for example:
+   ```
+   ollama pull llama3.1:8b      # a decent all-rounder, needs roughly 8 GB of free RAM
+   ollama pull llama3.2:3b      # smaller and faster, weaker answers, for modest PCs
+   ```
+3. In `.env` set `ACC_MODE=live` and `LOCAL_MODEL=llama3.1:8b` (the exact name you pulled). Leave the three API key lines empty.
+4. Restart the app. On **Settings**, click **Validate** on the *Local model* row: it checks that Ollama is running and the model is installed, without generating anything. Then try a task.
+
+What to expect, honestly:
+- **Slower and weaker** than the paid services, especially on a PC without a good graphics card. Small models sometimes return malformed structured answers; the app asks once more, then stops the step with a clear error instead of faking a result. A task can take minutes. The *Local model call timeout* (Settings, default 600 s) controls how long each call may run.
+- **No web access.** Research tasks run on the local model from its own memory, are labelled "WITHOUT live web access", and nothing is marked verified.
+- **Self-review.** With only the local model enabled, the same model writes and reviews, so the review is labelled *NOT independent*. Approval by you remains the real safeguard.
+- Local calls are shown as **local · free**, never as demo and never as a paid call. Memory use: `LOCAL_NUM_CTX` (default 16384) sets the context window; lower it to `8192` if your PC runs out of memory.
+- You can mix: keep the local model on next to paid providers. Paid providers are preferred when enabled; the local model is used when they are off, missing, or chosen manually for a step.
+
+---
+
 ## 3. How it works
 
 **Task lifecycle** (explicit state machine, every transition logged):
@@ -128,6 +151,9 @@ data/               created at runtime: SQLite DB, staging, backups, sandbox, se
 | Port 8787 in use | Set `ACC_PORT=8790` in `.env` and restart. |
 | UI says *Cannot reach the server* | Server not running; run `start`. The token is fetched automatically; reload the page after restarts. |
 | Settings shows `missing: set OPENAI_API_KEY` | Key not in `.env`/environment, or you did not restart after editing. |
+| Local model: "Could not reach Ollama" | Start Ollama (system tray icon, or run `ollama serve`), then Validate again. |
+| Local model: "model is not installed" | Run `ollama pull <the name in LOCAL_MODEL>`; names must match exactly (see `ollama list`). |
+| Local model: timeouts or very slow | Use a smaller model, lower `LOCAL_NUM_CTX`, or raise *Local model call timeout* in Settings. |
 | `[auth]` error from a provider | Wrong/expired key, no credits, or key lacks access to the model. A subscription is not an API key. |
 | `[rate_limit]`, task paused | Retries are bounded; wait and **Resume**. |
 | Task paused “budget” | A limit was hit before a call. Raise the limit in Settings (deliberately) and **Resume**. |
@@ -143,7 +169,7 @@ Run on Linux (Python 3.13, Node 22; Python 3.11 and 3.12 are the stated minimum 
 
 - **Verified by automated tests (no paid calls):** state machine; budget/limit enforcement; gateway retries/timeouts; staging/approval/hash binding/apply/revert; path and tool security; engine flows in demo mode; research cache, claim statuses, source-origin flagging, Perplexity routing and fallback via mocked HTTP; memory rules; HTTP API incl. auth/Host/Origin guards; UI pages with a mocked API.
 - **Verified manually:** a headless browser (Playwright/Chromium) created a project, ran a task, viewed the diff, approved, and confirmed the files were applied, with no console errors.
-- **Verified on Windows by the owner:** `py scripts\acc.py setup`, `test` and `start` worked (Python 3.14, Node 24). **NOT verified:** the OpenAI, Anthropic and Perplexity adapters against the *real* services (they are tested only against fakes built from the documented request/response shapes); the default model ids; the `.ps1` wrappers. Also confirmed on Windows by the owner in demo mode: a research task, and approving a staged proposal wrote the files into the project folder.
+- **Verified on Windows by the owner:** `py scripts\acc.py setup`, `test` and `start` worked (Python 3.14, Node 24). **NOT verified:** the local-model (Ollama) adapter, which was tested only against a fake HTTP server built from Ollama's documented API (the build sandbox could not download Ollama, so it has **never talked to a real Ollama**; please report the first real error); the OpenAI, Anthropic and Perplexity adapters against the *real* services (they are tested only against fakes built from the documented request/response shapes); the default model ids; the `.ps1` wrappers. Also confirmed on Windows by the owner in demo mode: a research task, and approving a staged proposal wrote the files into the project folder.
 
 Run `python scripts/acc.py test` yourself to see current numbers; do not rely on this README for pass counts.
 

@@ -5,7 +5,7 @@ from typing import Any
 
 from .db import Database
 
-PROVIDERS = ["openai", "anthropic", "perplexity"]
+PROVIDERS = ["openai", "anthropic", "perplexity", "local"]
 
 # USD per 1M tokens (input, output). These are editable ESTIMATES used for budget checks and for
 # providers that do not report cost. Sources: OpenAI pricing page, Anthropic model table, Perplexity
@@ -23,7 +23,7 @@ DEFAULT_PRICES: dict[str, dict[str, float]] = {
 }
 
 DEFAULTS: dict[str, Any] = {
-    "providers_enabled": {"openai": True, "anthropic": True, "perplexity": True},
+    "providers_enabled": {"openai": True, "anthropic": True, "perplexity": True, "local": False},  # local is opt-in
     "routing_mode": "auto",  # auto | manual (default for new tasks)
     "limits": {
         "per_task_usd": 1.00,
@@ -35,6 +35,7 @@ DEFAULTS: dict[str, Any] = {
         "max_repair_attempts": 2,
         "max_subtasks": 8,
         "call_timeout_s": 120,
+        "local_call_timeout_s": 600,  # local models on a CPU can be slow
         "task_timeout_s": 1800,
         "max_retries_per_call": 2,
         "max_output_tokens": 4096,
@@ -94,7 +95,7 @@ class SettingsService:
     def _validate(key: str, value: Any) -> None:
         if key == "providers_enabled":
             if not isinstance(value, dict) or set(value) - set(PROVIDERS) or not all(isinstance(v, bool) for v in value.values()):
-                raise ValueError("providers_enabled must map openai/anthropic/perplexity to booleans")
+                raise ValueError("providers_enabled must map openai/anthropic/perplexity/local to booleans")
         elif key == "routing_mode":
             if value not in ("auto", "manual"):
                 raise ValueError("routing_mode must be 'auto' or 'manual'")

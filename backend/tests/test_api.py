@@ -149,7 +149,7 @@ def test_projects_memory_and_export(api):
 
 def test_settings_validation_and_no_secrets(api):
     s = api.get("/api/settings").json()
-    assert s["mode"] == "demo" and set(s["credentials"]) == {"openai", "anthropic", "perplexity"}
+    assert s["mode"] == "demo" and set(s["credentials"]) == {"openai", "anthropic", "perplexity", "local"}
     assert "api_key" not in str(s).lower().replace("api_key_env", "")
     assert api.put("/api/settings", json={"routing_mode": "chaos"}).status_code == 400
     assert api.put("/api/settings", json={"limits": {"per_task_usd": -1}}).status_code == 400
@@ -177,9 +177,9 @@ def test_claim_override_and_agents_and_dashboard(api):
     c = [c for c in api.get(f"/api/tasks/{tid}").json()["claims"] if c["id"] == cid][0]
     assert c["status"] == "conflicting" and c["note"].startswith("manual:")
     agents = api.get("/api/agents").json()
-    assert {a["provider"] for a in agents} == {"openai", "anthropic", "perplexity"}
+    assert {a["provider"] for a in agents} == {"openai", "anthropic", "perplexity", "local"}
     dash = api.get("/api/dashboard").json()
-    assert dash["mode"] == "demo" and dash["recently_completed"] and "usage" in dash and len(dash["providers"]) == 3
+    assert dash["mode"] == "demo" and dash["recently_completed"] and "usage" in dash and len(dash["providers"]) == 4
     assert api.get("/api/tools").status_code == 200
 
 

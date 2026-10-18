@@ -9,6 +9,9 @@
 - `tools/` registers schema-validated tools; every tool call is permission-checked and logged.
 - `store.py`/`db.py`: SQLite (WAL) with a single lock-guarded connection.
 
+## Local provider
+`providers/local_provider.py` talks to Ollama's native `/api/chat` (so each request can set `num_ctx`; the OpenAI-compatible endpoint cannot). It is `billable=False, local=True`: calls are recorded with `cost_basis='local'` (also for failures), which keeps them distinct from demo mocks in reports, budgets and the UI. The router uses it only after paid providers (or when chosen manually); research on it is flagged as no-web.
+
 ## Trust boundaries
 - Trusted: your messages, project instructions, confirmed memory, the settings you saved.
 - Untrusted data (fenced in prompts with `<untrusted_data>`): web content, project files, documents, tool output, upstream agent output, unconfirmed memory.
