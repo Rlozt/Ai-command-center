@@ -1,4 +1,5 @@
 import os
+from tests.conftest import make_symlink
 
 import pytest
 
@@ -35,7 +36,7 @@ async def test_reads_outside_the_permitted_directory_are_denied(ctx, project, pr
 async def test_symlinks_cannot_leak_files_from_outside(ctx, project, project_dir, tmp_path):
     outside = tmp_path / "outside.txt"
     outside.write_text("outside data")
-    os.symlink(outside, project_dir / "leak.txt")
+    make_symlink(outside, project_dir / "leak.txt")
     r = await ctx.tools.invoke("read_file", {"path": "leak.txt"}, tctx(ctx, project))
     assert not r["ok"]
     ls = await ctx.tools.invoke("list_files", {}, tctx(ctx, project))

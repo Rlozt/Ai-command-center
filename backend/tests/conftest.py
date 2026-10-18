@@ -68,3 +68,12 @@ def _no_real_credentials(monkeypatch):
     for k in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PERPLEXITY_API_KEY"):
         monkeypatch.delenv(k, raising=False)
     monkeypatch.setenv("ACC_MODE", "demo")
+
+
+def make_symlink(target, link):
+    """Symlinks need a privilege on Windows (Developer Mode or admin); skip, rather than fail, where that is not available."""
+    import os
+    try:
+        os.symlink(target, link)
+    except (OSError, NotImplementedError) as e:
+        pytest.skip(f"cannot create symlinks here: {e}")

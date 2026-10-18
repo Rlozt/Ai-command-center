@@ -1,4 +1,5 @@
 import os
+from tests.conftest import make_symlink
 from pathlib import Path
 
 import pytest
@@ -30,7 +31,7 @@ def PF(path, content, action="create"):
 
 
 def test_staging_never_touches_the_project_and_makes_a_readable_diff(ctx, task, project, project_dir):
-    (project_dir / "a.txt").write_text("one\ntwo\n")
+    (project_dir / "a.txt").write_bytes(b"one\ntwo\n")  # bytes: write_text would translate to CRLF on Windows
     p = stage(ctx, task, project, [PF("a.txt", "one\nTWO\n", "modify"), PF("new/b.txt", "hello\n")])
     assert (project_dir / "a.txt").read_text() == "one\ntwo\n" and not (project_dir / "new").exists()
     files = {f["path"]: f for f in p["files"]}
@@ -56,7 +57,7 @@ def test_unsafe_paths_are_rejected(ctx, task, project, bad):
 def test_symlink_escape_is_blocked(ctx, task, project, project_dir, tmp_path):
     outside = tmp_path / "outside"
     outside.mkdir()
-    os.symlink(outside, project_dir / "link")
+    make_symlink(outside, project_dir / "link")
     with pytest.raises(Exception):
         stage(ctx, task, project, [PF("link/pwn.txt", "x")])
     assert not (outside / "pwn.txt").exists()
